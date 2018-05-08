@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.amazon.ags.mapper.RefinementMapper">
+	<resultMap id="RefinementCoverageMapper" type="com.amazon.ags.pojo.RefinementCoverage">
+		<id property="id" column="id" />
+		<result property="sourceCountry" column="sourceCountry" />
+		<result property="targetCountry" column="targetCountry" />
+		<result property="week" column="week" />
+		<result property="year" column="year" />
+		<result property="pl" column="pl" />
+		<result property="gl" column="gl" />
+		<result property="nodeId" column="nodeId" />
+		<result property="storeContextName" column="storeContextName" />
+		<result property="refId" column="refId" />
+		<result property="refName" column="refName" />
+		<result property="refFilterTags" column="refFilterTags" />
+		<result property="owner" column="owner" />
+		<result property="status" column="status" />
+		<result property="glanceViewBand" column="glanceViewBand" />
+		<result property="eligibleAsinCount" column="eligibleAsinCount" />
+		<result property="participatingAsinCount" column="participatingAsinCount" />
+		<result property="coverageAssignments" column="coverageAssignments" />
+		<result property="eligibleAsinGv" column="eligibleAsinGv" />
+		<result property="participatingAsinGv" column="participatingAsinGv" />
+		<result property="coverageGvs" column="coverageGvs" />
+		<result property="idCat" column="idCat" />
+		<result property="idRef" column="idRef" />
+	</resultMap>
+
+	<!-- <resultMap id="BrowseNodeDefectiveAsinMapper" type="com.amazon.ags.pojo.BrowseNodeDefectiveAsin"> 
+		<id property="id" column="id" /> <result property="sourceCountry" column="sourceCountry" 
+		/> <result property="targetCountry" column="targetCountry" /> <result property="asin" 
+		column="asin" /> <result property="productGroupCode" column="productGroupCode" 
+		/> <result property="productGroupDescription" column="productGroupDescription" 
+		/> <result property="pl" column="pl" /> <result property="browseNodeId" column="browseNodeId" 
+		/> <result property="rootBrowseNodeId" column="rootBrowseNodeId" /> <result 
+		property="contextFreeName" column="contextFreeName" /> <result property="path" 
+		column="path" /> <result property="websiteLeafStatus" column="websiteLeafStatus" 
+		/> <result property="isLeafNode" column="isLeafNode" /> <result property="status" 
+		column="status" /> <result property="unitedPath" column="unitedPath" /> <result 
+		property="mark" column="mark" /> <result property="week" column="week" /> 
+		</resultMap> -->
+
+	<select id="findRefinementSourceCountry" resultMap="RefinementCoverageMapper">
+		select
+		distinct
+		sourceCountry from
+		refinement_coverage_week
+		order by
+		sourceCountry
+	</select>
+
+	<select id="findRefinementTargetCountry" resultMap="RefinementCoverageMapper">
+		select
+		distinct targetCountry from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry}
+		order by
+		targetCountry
+	</select>
+
+	<select id="findRefinementYear" resultMap="RefinementCoverageMapper">
+		select distinct year
+		from refinement_coverage_week
+		where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry}
+		order by year desc
+	</select>
+
+	<select id="findRefinementWeek" resultMap="RefinementCoverageMapper">
+		select distinct week
+		from refinement_coverage_week
+		where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		order by week
+	</select>
+
+	<select id="findRefinementPL" resultMap="RefinementCoverageMapper">
+		select distinct pl from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		order by pl
+	</select>
+
+	<select id="findRefinementGL" resultMap="RefinementCoverageMapper">
+		select distinct pl,gl from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and pl in
+		<foreach item="item" index="index" collection="pls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		order by pl,gl
+	</select>
+
+	<select id="findRefinementBand" resultMap="RefinementCoverageMapper">
+		select distinct glanceViewBand from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and pl in
+		<foreach item="item" index="index" collection="pls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and gl in
+		<foreach item="item" index="index" collection="gls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		order by glanceViewBand
+	</select>
+
+	<select id="findRefinementWeekCoverage" resultMap="RefinementCoverageMapper">
+		select
+		week,round(sum(participatingAsinCount)/sum(eligibleAsinCount)*100,2)
+		as
+		coverageAssignments
+		from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		group by week
+	</select>
+
+	<select id="findRefinementPlCoverage" resultMap="RefinementCoverageMapper">
+		select
+		pl,week,round(sum(participatingAsinCount)/sum(eligibleAsinCount)*100,2)
+		as
+		coverageAssignments
+		from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and pl in
+		<foreach item="item" index="index" collection="pls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		group by pl,week
+	</select>
+
+	<select id="findRefinementBandCoverage" resultMap="RefinementCoverageMapper">
+		select
+		gl,week,round(sum(participatingAsinCount)/sum(eligibleAsinCount)*100,2)
+		as
+		coverageAssignments
+		from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and gl in
+		<foreach item="item" index="index" collection="gls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="bands!=null">
+			and glanceViewBand in
+			<foreach item="item" index="index" collection="bands" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		group by gl,week
+	</select>
+
+	<select id="downLoadRefinementCoverage" resultMap="RefinementCoverageMapper">
+		select * from refinement_coverage_week
+		where
+		sourceCountry=#{refinementCoverage.sourceCountry}
+		and
+		targetCountry=#{refinementCoverage.targetCountry}
+		and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="pls!=null">
+			and pl in
+			<foreach item="item" index="index" collection="pls" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="gls!=null">
+			and gl in
+			<foreach item="item" index="index" collection="gls" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="bands!=null">
+			and glanceViewBand in
+			<foreach item="item" index="index" collection="bands" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+
+	<!-- 分页查询defective asin <select id="findBrowseNodeDefectiveAsin" resultMap="BrowseNodeDefectiveAsinMapper"> 
+		select * from browse_node_defective_asin_week where sourceCountry=#{browseNodeCoverage.sourceCountry} 
+		and targetCountry=#{browseNodeCoverage.targetCountry} and week in <foreach 
+		item="item" index="index" collection="weeks" open="(" separator="," close=")"> 
+		#{item} </foreach> <if test="pls!=null"> and pl in <foreach item="item" index="index" 
+		collection="pls" open="(" separator="," close=")"> #{item} </foreach> </if> 
+		<if test="gls!=null"> and productGroupDescription in <foreach item="item" 
+		index="index" collection="gls" open="(" separator="," close=")"> #{item} 
+		</foreach> </if> limit #{start},#{end} </select> <insert id="addBrowseNodeCoverage"> 
+		insert into browse_node_coverage_week(sourceCountry,targetCountry,pl,productGroupCode,productGroupDescription,inLeafCount,buyableAsinCount,coverage,week) 
+		values(#{browseNodeCoverage.sourceCountry},#{browseNodeCoverage.targetCountry},#{browseNodeCoverage.pl},#{browseNodeCoverage.productGroupCode},#{browseNodeCoverage.productGroupDescription},#{browseNodeCoverage.inLeafCount},#{browseNodeCoverage.buyableAsinCount},#{browseNodeCoverage.coverage},#{browseNodeCoverage.week}) 
+		</insert> -->
+</mapper>  

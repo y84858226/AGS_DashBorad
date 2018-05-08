@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.amazon.ags.mapper.BrowseNodeMapper">
+	<resultMap id="BrowseNodeCoverageMapper" type="com.amazon.ags.pojo.BrowseNodeCoverage">
+		<id property="id" column="id" />
+		<result property="sourceCountry" column="sourceCountry" />
+		<result property="targetCountry" column="targetCountry" />
+		<result property="year" column="year" />
+		<result property="week" column="week" />
+		<result property="pl" column="pl" />
+		<result property="productGroupCode" column="productGroupCode" />
+		<result property="productGroupDescription" column="productGroupDescription" />
+		<result property="inLeafCount" column="inLeafCount" />
+		<result property="buyableAsinCount" column="buyableAsinCount" />
+		<result property="coverage" column="coverage" />
+	</resultMap>
+
+	<resultMap id="BrowseNodeDefectiveAsinMapper" type="com.amazon.ags.pojo.BrowseNodeDefectiveAsin">
+		<id property="id" column="id" />
+		<result property="sourceCountry" column="sourceCountry" />
+		<result property="targetCountry" column="targetCountry" />
+		<result property="year" column="year" />
+		<result property="week" column="week" />
+		<result property="asin" column="asin" />
+		<result property="productGroupCode" column="productGroupCode" />
+		<result property="productGroupDescription" column="productGroupDescription" />
+		<result property="pl" column="pl" />
+		<result property="browseNodeId" column="browseNodeId" />
+		<result property="rootBrowseNodeId" column="rootBrowseNodeId" />
+		<result property="browseNodeName" column="browseNodeName" />
+		<result property="edgePathName" column="edgePathName" />
+		<result property="isLeafNode" column="isLeafNode" />
+	</resultMap>
+
+	<select id="findSourceCountry" resultMap="BrowseNodeCoverageMapper">
+		select distinct
+		sourceCountry from
+		browse_node_coverage_week
+		order by sourceCountry
+	</select>
+
+	<select id="findTargetCountry" resultMap="BrowseNodeCoverageMapper"
+		parameterType="com.amazon.ags.pojo.BrowseNodeCoverage">
+		select distinct targetCountry from
+		browse_node_coverage_week where sourceCountry=#{sourceCountry}
+		order by
+		targetCountry
+	</select>
+
+	<select id="findYear" resultMap="BrowseNodeCoverageMapper"
+		parameterType="com.amazon.ags.pojo.BrowseNodeCoverage">
+		select distinct year from
+		browse_node_coverage_week where
+		sourceCountry=#{sourceCountry} and targetCountry=#{targetCountry}
+		order by year desc
+	</select>
+
+	<select id="findWeek" resultMap="BrowseNodeCoverageMapper"
+		parameterType="com.amazon.ags.pojo.BrowseNodeCoverage">
+		select distinct week from browse_node_coverage_week
+		where sourceCountry=#{sourceCountry} and
+		targetCountry=#{targetCountry} and year=#{year}
+		order by week
+	</select>
+
+	<select id="findPL" resultMap="BrowseNodeCoverageMapper">
+		select distinct pl from
+		browse_node_coverage_week where
+		sourceCountry=#{browseNodeCoverage.sourceCountry} and
+		targetCountry=#{browseNodeCoverage.targetCountry} and
+		year=#{browseNodeCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		order by pl
+	</select>
+
+	<select id="findGL" resultMap="BrowseNodeCoverageMapper">
+		select distinct pl,productGroupDescription from
+		browse_node_coverage_week where
+		sourceCountry=#{browseNodeCoverage.sourceCountry} and
+		targetCountry=#{browseNodeCoverage.targetCountry} and
+		year=#{browseNodeCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and pl in
+		<foreach item="item" index="index" collection="pls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		order by pl,productGroupDescription
+	</select>
+
+	<select id="findWeekCoverage" resultMap="BrowseNodeCoverageMapper">
+		select
+		week,round(sum(inLeafCount)/sum(buyableAsinCount)*100,2) as
+		coverage
+		from
+		browse_node_coverage_week where
+		sourceCountry=#{browseNodeCoverage.sourceCountry} and
+		targetCountry=#{browseNodeCoverage.targetCountry} and
+		year=#{browseNodeCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		group by week
+	</select>
+
+	<select id="findPlCoverage" resultMap="BrowseNodeCoverageMapper">
+		select
+		pl,week,round(sum(inLeafCount)/sum(buyableAsinCount)*100,2) as
+		coverage
+		from
+		browse_node_coverage_week where
+		sourceCountry=#{browseNodeCoverage.sourceCountry} and
+		targetCountry=#{browseNodeCoverage.targetCountry} and
+		year=#{browseNodeCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and pl in
+		<foreach item="item" index="index" collection="pls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		group by pl,week
+	</select>
+
+	<select id="findGlCoverage" resultMap="BrowseNodeCoverageMapper">
+		select
+		productGroupDescription,week,round(sum(inLeafCount)/sum(buyableAsinCount)*100,2)
+		as coverage
+		from
+		browse_node_coverage_week where
+		sourceCountry=#{browseNodeCoverage.sourceCountry} and
+		targetCountry=#{browseNodeCoverage.targetCountry} and
+		year=#{browseNodeCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and productGroupDescription in
+		<foreach item="item" index="index" collection="gls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		group by productGroupDescription,week
+	</select>
+
+
+	<!-- 下载browse node coverage -->
+	<select id="downLoadBrowseNodeCoverage" resultMap="BrowseNodeCoverageMapper">
+		select * from browse_node_coverage_week
+		where
+		sourceCountry=#{browseNodeCoverage.sourceCountry}
+		and
+		targetCountry=#{browseNodeCoverage.targetCountry}
+		and
+		year=#{browseNodeCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="pls!=null">
+			and pl in
+			<foreach item="item" index="index" collection="pls" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="gls!=null">
+			and productGroupDescription in
+			<foreach item="item" index="index" collection="gls" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<!-- 分页查询defective asin -->
+	<select id="findBrowseNodeDefectiveAsin" resultMap="BrowseNodeDefectiveAsinMapper">
+		select * from browse_node_defective_asin_week
+		where
+		sourceCountry=#{browseNodeDefectiveAsin.sourceCountry}
+		and
+		targetCountry=#{browseNodeDefectiveAsin.targetCountry}
+		and
+		year=#{browseNodeDefectiveAsin.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="pls!=null">
+			and pl in
+			<foreach item="item" index="index" collection="pls" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="gls!=null">
+			and productGroupDescription in
+			<foreach item="item" index="index" collection="gls" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		limit #{start},#{end}
+	</select>
+
+	<insert id="addBrowseNodeCoverage">
+		insert into
+		browse_node_coverage_week(sourceCountry,targetCountry,year,week,pl,productGroupCode,productGroupDescription,inLeafCount,buyableAsinCount,coverage)
+		values
+		<foreach collection="list" item="browseNodeCoverage"
+			separator=",">
+			(#{browseNodeCoverage.sourceCountry},
+			#{browseNodeCoverage.targetCountry},
+			#{browseNodeCoverage.year},
+			#{browseNodeCoverage.week},
+			#{browseNodeCoverage.pl},
+			#{browseNodeCoverage.productGroupCode},
+			#{browseNodeCoverage.productGroupDescription},
+			#{browseNodeCoverage.inLeafCount},
+			#{browseNodeCoverage.buyableAsinCount},
+			#{browseNodeCoverage.coverage})
+		</foreach>
+	</insert>
+
+	<insert id="addBrowseNodeDefectiveAsin">
+		insert into
+		browse_node_defective_asin_week(sourceCountry,targetCountry,year,week,asin,productGroupCode,productGroupDescription,pl,browseNodeId,rootBrowseNodeId,browseNodeName,edgePathName,isLeafNode)
+		values
+		<foreach collection="list" item="browseNodeDefectiveAsin" separator=",">
+			(#{browseNodeDefectiveAsin.sourceCountry},
+			#{browseNodeDefectiveAsin.targetCountry},
+			#{browseNodeDefectiveAsin.year},
+			#{browseNodeDefectiveAsin.week},
+			#{browseNodeDefectiveAsin.asin},
+			#{browseNodeDefectiveAsin.productGroupCode},
+			#{browseNodeDefectiveAsin.productGroupDescription},
+			#{browseNodeDefectiveAsin.pl},
+			#{browseNodeDefectiveAsin.browseNodeId},
+			#{browseNodeDefectiveAsin.rootBrowseNodeId},
+			#{browseNodeDefectiveAsin.browseNodeName},
+			#{browseNodeDefectiveAsin.edgePathName},
+			#{browseNodeDefectiveAsin.isLeafNode})
+		</foreach>
+	</insert>
+	
+	<update id="clearBrowseNodeDefectiveAsin">
+		truncate table browse_node_defective_asin_week
+	</update>
+</mapper>  

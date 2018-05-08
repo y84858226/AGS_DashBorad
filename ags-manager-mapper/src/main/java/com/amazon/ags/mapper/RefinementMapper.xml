@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.amazon.ags.mapper.RefinementMapper">
+	<resultMap id="RefinementCoverageMapper" type="com.amazon.ags.pojo.RefinementCoverage">
+		<id property="id" column="id" />
+		<result property="sourceCountry" column="sourceCountry" />
+		<result property="targetCountry" column="targetCountry" />
+		<result property="year" column="year" />
+		<result property="week" column="week" />
+		<result property="pl" column="pl" />
+		<result property="gl" column="gl" />
+		<result property="nodeId" column="nodeId" />
+		<result property="storeContextName" column="storeContextName" />
+		<result property="refId" column="refId" />
+		<result property="refName" column="refName" />
+		<result property="refFilterTags" column="refFilterTags" />
+		<result property="owner" column="owner" />
+		<result property="status" column="status" />
+		<result property="glanceViewBand" column="glanceViewBand" />
+		<result property="eligibleAsinCount" column="eligibleAsinCount" />
+		<result property="participatingAsinCount" column="participatingAsinCount" />
+		<result property="coverageAssignments" column="coverageAssignments" />
+		<result property="eligibleAsinGv" column="eligibleAsinGv" />
+		<result property="participatingAsinGv" column="participatingAsinGv" />
+		<result property="coverageGvs" column="coverageGvs" />
+		<result property="idCat" column="idCat" />
+		<result property="idRef" column="idRef" />
+	</resultMap>
+
+	<resultMap id="RefinementDefectiveAsinMapper" type="com.amazon.ags.pojo.RefinementDefectiveAsin">
+		<id property="id" column="id" />
+		<result property="sourceCountry" column="sourceCountry" />
+		<result property="targetCountry" column="targetCountry" />
+		<result property="year" column="year" />
+		<result property="week" column="week" />
+		<result property="pl" column="pl" />
+		<result property="gl" column="gl" />
+		<result property="nodeId" column="nodeId" />
+		<result property="storeContextName" column="storeContextName" />
+		<result property="refId" column="refId" />
+		<result property="refName" column="refName" />
+		<result property="refFilterTags" column="refFilterTags" />
+		<result property="owner" column="owner" />
+		<result property="status" column="status" />
+		<result property="glanceViewBand" column="glanceViewBand" />
+		<result property="defectiveAsin" column="defectiveAsin" />
+	</resultMap>
+
+	<select id="findRefinementSourceCountry" resultMap="RefinementCoverageMapper">
+		select
+		distinct
+		sourceCountry from
+		refinement_coverage_week
+		order by
+		sourceCountry
+	</select>
+
+	<select id="findRefinementTargetCountry" resultMap="RefinementCoverageMapper">
+		select
+		distinct targetCountry from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry}
+		order by
+		targetCountry
+	</select>
+
+	<select id="findRefinementYear" resultMap="RefinementCoverageMapper">
+		select distinct year
+		from refinement_coverage_week
+		where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry}
+		order by year desc
+	</select>
+
+	<select id="findRefinementWeek" resultMap="RefinementCoverageMapper">
+		select distinct week
+		from refinement_coverage_week
+		where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		order by week
+	</select>
+
+	<select id="findRefinementPL" resultMap="RefinementCoverageMapper">
+		select distinct pl from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		order by pl
+	</select>
+
+	<select id="findRefinementGL" resultMap="RefinementCoverageMapper">
+		select distinct pl,gl from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and pl in
+		<foreach item="item" index="index" collection="pls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		order by pl,gl
+	</select>
+
+	<select id="findRefinementBand" resultMap="RefinementCoverageMapper">
+		select distinct glanceViewBand from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and pl in
+		<foreach item="item" index="index" collection="pls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and gl in
+		<foreach item="item" index="index" collection="gls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		order by glanceViewBand
+	</select>
+
+	<select id="findRefinementWeekCoverage" resultMap="RefinementCoverageMapper">
+		select
+		week,round(sum(participatingAsinCount)/sum(eligibleAsinCount)*100,2)
+		as
+		coverageAssignments
+		from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		group by week
+	</select>
+
+	<select id="findRefinementPlCoverage" resultMap="RefinementCoverageMapper">
+		select
+		pl,week,round(sum(participatingAsinCount)/sum(eligibleAsinCount)*100,2)
+		as
+		coverageAssignments
+		from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and pl in
+		<foreach item="item" index="index" collection="pls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		group by pl,week
+	</select>
+
+	<select id="findRefinementBandCoverage" resultMap="RefinementCoverageMapper">
+		select
+		gl,week,round(sum(participatingAsinCount)/sum(eligibleAsinCount)*100,2)
+		as
+		coverageAssignments
+		from
+		refinement_coverage_week where
+		sourceCountry=#{refinementCoverage.sourceCountry} and
+		targetCountry=#{refinementCoverage.targetCountry} and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		and gl in
+		<foreach item="item" index="index" collection="gls" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="bands!=null">
+			and glanceViewBand in
+			<foreach item="item" index="index" collection="bands" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		group by gl,week
+	</select>
+
+	<select id="downLoadRefinementCoverage" resultMap="RefinementCoverageMapper">
+		select * from refinement_coverage_week
+		where
+		sourceCountry=#{refinementCoverage.sourceCountry}
+		and
+		targetCountry=#{refinementCoverage.targetCountry}
+		and
+		year=#{refinementCoverage.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="pls!=null">
+			and pl in
+			<foreach item="item" index="index" collection="pls" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="gls!=null">
+			and gl in
+			<foreach item="item" index="index" collection="gls" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="bands!=null">
+			and glanceViewBand in
+			<foreach item="item" index="index" collection="bands" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<insert id="addRefinementCoverage">
+		insert into
+		refinement_coverage_week(sourceCountry,targetCountry,year,week,pl,gl,nodeId,storeContextName,refId,refName,refFilterTags,owner,status,glanceViewBand,eligibleAsinCount,participatingAsinCount,coverageAssignments,eligibleAsinGv,participatingAsinGv,coverageGvs,idCat,idRef)
+		values
+		<foreach collection="list" item="refinementCoverage"
+			separator=",">
+			(#{refinementCoverage.sourceCountry},#{refinementCoverage.targetCountry},#{refinementCoverage.year},#{refinementCoverage.week},#{refinementCoverage.pl},#{refinementCoverage.gl},#{refinementCoverage.nodeId},#{refinementCoverage.storeContextName},#{refinementCoverage.refId},#{refinementCoverage.refName},#{refinementCoverage.refFilterTags},#{refinementCoverage.owner},#{refinementCoverage.status},#{refinementCoverage.glanceViewBand},#{refinementCoverage.eligibleAsinCount},#{refinementCoverage.participatingAsinCount},#{refinementCoverage.coverageAssignments},#{refinementCoverage.eligibleAsinGv},#{refinementCoverage.participatingAsinGv},#{refinementCoverage.coverageGvs},#{refinementCoverage.idCat},#{refinementCoverage.idRef})
+		</foreach>
+	</insert>
+
+	<update id="deleteRefinementDefectiveAsin">
+		truncate table refinement_defective_asin_week
+	</update>
+	
+	<insert id="addRefinementDefectiveAsin">
+		insert into
+		refinement_defective_asin_week(sourceCountry,targetCountry,year,week,pl,gl,nodeId,storeContextName,refId,refName,refFilterTags,owner,status,glanceViewBand,defectiveAsin)
+		values
+		<foreach collection="list" item="refinementDefectiveAsin"
+			separator=",">
+			(#{refinementDefectiveAsin.sourceCountry},#{refinementDefectiveAsin.targetCountry},#{refinementDefectiveAsin.year},#{refinementDefectiveAsin.week},#{refinementDefectiveAsin.pl},#{refinementDefectiveAsin.gl},#{refinementDefectiveAsin.nodeId},#{refinementDefectiveAsin.storeContextName},#{refinementDefectiveAsin.refId},#{refinementDefectiveAsin.refName},#{refinementDefectiveAsin.refFilterTags},#{refinementDefectiveAsin.owner},#{refinementDefectiveAsin.status},#{refinementDefectiveAsin.glanceViewBand},#{refinementDefectiveAsin.defectiveAsin})
+		</foreach>
+	</insert>
+
+	<select id="findRefinementDefectiveAsin" resultMap="RefinementDefectiveAsinMapper">
+		select * from refinement_defective_asin_week
+		where
+		sourceCountry=#{refinementDefectiveAsin.sourceCountry}
+		and
+		targetCountry=#{refinementDefectiveAsin.targetCountry}
+		and
+		year=#{refinementDefectiveAsin.year}
+		and week in
+		<foreach item="item" index="index" collection="weeks" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="pls!=null">
+			and pl in
+			<foreach item="item" index="index" collection="pls" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="gls!=null">
+			and gl in
+			<foreach item="item" index="index" collection="gls" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		limit #{start},#{end}
+	</select>
+</mapper>  
